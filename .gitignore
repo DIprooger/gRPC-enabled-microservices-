@@ -89,5 +89,7 @@ dmypy.json
 .git/
 
 
-
+.env
+/services/order/.env/
+/services/user/.env/
 /.env
