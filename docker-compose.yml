@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: ${DB_NAME_POS}
+      POSTGRES_USER: ${DB_USER_POS}
+      POSTGRES_PASSWORD: ${DB_PASSWORD_POS}
+    ports:
+      - "5433:5432"
+    networks:
+      - backend
+
+  user-service:
+    build:
+      context: ./services/user
+      dockerfile: Dockerfile
+    ports:
+      - "50051:50051"  # gRPC порт
+    environment:
+      - POSTGRES_DB=${DB_NAME_POS}
+      - POSTGRES_USER=${DB_USER_POS}
+      - POSTGRES_PASSWORD=${DB_PASSWORD_POS}
+      - DB_HOST_POS=${DB_HOST_POS}
+      - DB_PORT_POS=${DB_PORT_POS}
+    depends_on:
+      - postgres
+    command: [ "./wait-for-postgres.sh", "postgres", "python3", "service.py" ]
+    networks:
+      - backend
+
+  order-service:
+    build:
+      context: ./services/order
+      dockerfile: Dockerfile
+    ports:
+      - "50052:50052"  # gRPC порт
+    environment:
+      - POSTGRES_DB=${DB_NAME_POS}
+      - POSTGRES_USER=${DB_USER_POS}
+      - POSTGRES_PASSWORD=${DB_PASSWORD_POS}
+      - DB_HOST_POS=${DB_HOST_POS}
+      - DB_PORT_POS=${DB_PORT_POS}
+    depends_on:
+      - postgres
+      - user-service
+    command: [ "./wait-for-postgres.sh", "postgres", "python3", "service.py" ]
+    networks:
+      - backend
+
+
+networks:
+  backend:
+    driver: bridge
